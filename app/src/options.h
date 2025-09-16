@@ -239,6 +239,11 @@ struct scrcpy_options {
     const char *video_encoder;
     const char *audio_encoder;
     const char *camera_id;
+    // 新增参数
+    const uint32_t *user_id;
+    const char *webrtc-signal-url;
+    const char *websocket-url;
+
     const char *camera_size;
     const char *camera_ar;
     uint16_t camera_fps;
@@ -284,6 +289,9 @@ struct scrcpy_options {
 #ifdef HAVE_USB
     bool otg;
 #endif
+    // 新增参数
+    bool enable-webrtc
+
     bool show_touches;
     bool fullscreen;
     bool always_on_top;

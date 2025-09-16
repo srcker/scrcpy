@@ -15,9 +15,8 @@ const struct scrcpy_options scrcpy_options_default = {
     .audio_encoder = NULL,
     .camera_id = NULL,
     // 新增参数
-    .user_id = NULL,
+    .user_id = 0,
     .webrtc-signal-url = NULL,
-    .websocket-url = NULL,
     .websocket-url = NULL,
     .user_id = NULL,
     .camera_size = NULL,
