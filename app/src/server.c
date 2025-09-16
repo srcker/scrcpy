@@ -435,8 +435,7 @@ execute_server(struct sc_server *server,
 
     //新增参数信息
     if (params->user_id) {
-        VALIDATE_STRING(params->user_id);
-        ADD_PARAM("user_id=%s", params->user_id);
+        ADD_PARAM("user_id=%" PRIu32, params->user_id);
     }
 
     if (params->webrtc_signal_url) {
