@@ -41,6 +41,14 @@ public class Options {
     private boolean control = true;
     private int displayId;
     private String cameraId;
+
+
+    private boolean enableWebRTC;
+
+    private String webrtcSignalUrl;
+
+    private Long userId;
+
     private Size cameraSize;
     private CameraFacing cameraFacing;
     private CameraAspectRatio cameraAspectRatio;
@@ -288,6 +296,18 @@ public class Options {
         return sendCodecMeta;
     }
 
+    public boolean getEnableWebRTC() {
+        return enableWebRTC;
+    }
+
+    public String getWebrtcSignalUrl(){
+        return webrtcSignalUrl;
+    }
+
+    public Long getUserId(){
+        return userId;
+    }
+
     @SuppressWarnings("MethodLength")
     public static Options parse(String... args) {
         if (args.length < 1) {
@@ -502,6 +522,19 @@ public class Options {
                     break;
                 case "send_codec_meta":
                     options.sendCodecMeta = Boolean.parseBoolean(value);
+                    break;
+                case "enable-webrtc":
+                    options.enableWebRTC = Boolean.parseBoolean(value);
+                    break;
+                case "webrtc-signal-url":
+                    if (!value.isEmpty()) {
+                        options.webrtcSignalUrl = value;
+                    }
+                    break;
+                case "user_id":
+                    if (!value.isEmpty()) {
+                        options.userId = Long.parseLong(value);
+                    }
                     break;
                 case "raw_stream":
                     boolean rawStream = Boolean.parseBoolean(value);

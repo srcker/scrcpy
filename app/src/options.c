@@ -14,6 +14,12 @@ const struct scrcpy_options scrcpy_options_default = {
     .video_encoder = NULL,
     .audio_encoder = NULL,
     .camera_id = NULL,
+    // 新增参数
+    .user_id = NULL,
+    .webrtc-signal-url = NULL,
+    .websocket-url = NULL,
+    .websocket-url = NULL,
+    .user_id = NULL,
     .camera_size = NULL,
     .camera_ar = NULL,
     .camera_fps = 0,
@@ -74,6 +80,8 @@ const struct scrcpy_options scrcpy_options_default = {
 #ifdef HAVE_USB
     .otg = false,
 #endif
+    // 新增参数信息
+    .enable-webrtc = false,
     .show_touches = false,
     .fullscreen = false,
     .always_on_top = false,

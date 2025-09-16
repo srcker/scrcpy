@@ -12,6 +12,7 @@ import com.genymobile.scrcpy.util.CodecUtils;
 import com.genymobile.scrcpy.util.IO;
 import com.genymobile.scrcpy.util.Ln;
 import com.genymobile.scrcpy.util.LogUtils;
+import com.genymobile.scrcpy.webrtc.WebRTCModule;
 
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
@@ -19,6 +20,7 @@ import android.media.MediaFormat;
 import android.os.Build;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.Surface;
 
 import java.io.IOException;
@@ -52,6 +54,21 @@ public class SurfaceEncoder implements AsyncProcessor {
 
     private final CaptureReset reset = new CaptureReset();
 
+    private final boolean enableWebRTC;
+    private WebRTCModule webrtcModule;
+
+    private final String webrtcSignalUrl;
+
+//    public SurfaceEncoder(SurfaceCapture capture, Streamer streamer, Options options) {
+//        this.capture = capture;
+//        this.streamer = streamer;
+//        this.videoBitRate = options.getVideoBitRate();
+//        this.maxFps = options.getMaxFps();
+//        this.codecOptions = options.getVideoCodecOptions();
+//        this.encoderName = options.getVideoEncoder();
+//        this.downsizeOnError = options.getDownsizeOnError();
+//    }
+
     public SurfaceEncoder(SurfaceCapture capture, Streamer streamer, Options options) {
         this.capture = capture;
         this.streamer = streamer;
@@ -60,6 +77,16 @@ public class SurfaceEncoder implements AsyncProcessor {
         this.codecOptions = options.getVideoCodecOptions();
         this.encoderName = options.getVideoEncoder();
         this.downsizeOnError = options.getDownsizeOnError();
+        this.enableWebRTC = options.getEnableWebRTC();
+        this.webrtcSignalUrl = options.getWebrtcSignalUrl();
+
+        if (enableWebRTC) {
+            this.webrtcModule = new WebRTCModule(options);
+            this.webrtcModule.init();
+        }
+
+        Ln.w("启动参数: options->" + options.toString());
+        Log.w("启动参数: options->" , options.toString());
     }
 
     private void streamCapture() throws IOException, ConfigurationException {
@@ -90,7 +117,15 @@ public class SurfaceEncoder implements AsyncProcessor {
                 boolean captureStarted = false;
                 try {
                     mediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-                    surface = mediaCodec.createInputSurface();
+
+                    if (enableWebRTC && webrtcModule != null) {
+                        Ln.i("启动 WebRTC 推流 信令地址:" +  webrtcSignalUrl);
+                        Log.w("启动 WebRTC 推流 信令地址:" , webrtcSignalUrl);
+                        // WebRTC 零拷贝
+                        surface = webrtcModule.getInputSurface();
+                    } else {
+                        surface = mediaCodec.createInputSurface();
+                    }
 
                     capture.start(surface);
                     captureStarted = true;
@@ -314,6 +349,11 @@ public class SurfaceEncoder implements AsyncProcessor {
         if (thread != null) {
             stopped.set(true);
             reset.reset();
+        }
+
+        if (webrtcModule != null) {
+            webrtcModule.stop();
+            webrtcModule = null;
         }
     }
 

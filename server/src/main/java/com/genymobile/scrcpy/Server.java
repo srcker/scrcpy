@@ -38,6 +38,9 @@ public final class Server {
 
     public static final String SERVER_PATH;
 
+    private boolean enableWebRTC;
+    private String webrtcSignalUrl;
+
     static {
         String[] classPaths = System.getProperty("java.class.path").split(File.pathSeparator);
         // By convention, scrcpy is always executed with the absolute path of scrcpy-server.jar as the first item in the classpath
@@ -136,8 +139,8 @@ public final class Server {
             }
 
             if (video) {
-                Streamer videoStreamer = new Streamer(connection.getVideoFd(), options.getVideoCodec(), options.getSendCodecMeta(),
-                        options.getSendFrameMeta());
+                Streamer videoStreamer = new Streamer(connection.getVideoFd(), options.getVideoCodec(), options.getSendCodecMeta(), options.getSendFrameMeta());
+
                 SurfaceCapture surfaceCapture;
                 if (options.getVideoSource() == VideoSource.DISPLAY) {
                     NewDisplay newDisplay = options.getNewDisplay();
@@ -150,7 +153,10 @@ public final class Server {
                 } else {
                     surfaceCapture = new CameraCapture(options);
                 }
+
                 SurfaceEncoder surfaceEncoder = new SurfaceEncoder(surfaceCapture, videoStreamer, options);
+
+
                 asyncProcessors.add(surfaceEncoder);
 
                 if (controller != null) {

@@ -24,6 +24,8 @@ android {
 }
 
 dependencies {
+    implementation 'com.squareup.okhttp3:okhttp:5.1.0'
+    implementation 'com.infobip:google-webrtc:1.0.45036'
     testImplementation 'junit:junit:4.13.2'
 }
 
