@@ -433,6 +433,30 @@ execute_server(struct sc_server *server,
         ADD_PARAM("list_apps=true");
     }
 
+    //新增参数信息
+    if (params->user_id) {
+        VALIDATE_STRING(params->user_id);
+        ADD_PARAM("user_id=%s", params->user_id);
+    }
+
+    if (params->webrtc_signal_url) {
+        ADD_PARAM("webrtc_signal_url=%s", params->webrtc_signal_url);
+    }
+
+    if (params->websocket_url) {
+        ADD_PARAM("websocket_url=%s", params->websocket_url);
+    }
+
+    if (params->enable_webrtc) {
+        ADD_PARAM("enable_webrtc=true");
+    }else{
+        ADD_PARAM("enable_webrtc=false");
+    }
+
+
+
+
+
 #undef ADD_PARAM
 
     cmd[count++] = NULL;

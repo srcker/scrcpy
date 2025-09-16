@@ -47,6 +47,8 @@ public class Options {
 
     private String webrtcSignalUrl;
 
+    private String websocketUrl;
+
     private Long userId;
 
     private Size cameraSize;
@@ -304,6 +306,10 @@ public class Options {
         return webrtcSignalUrl;
     }
 
+    public String getWebsocketUrl(){
+        return websocketUrl;
+    }
+
     public Long getUserId(){
         return userId;
     }
@@ -523,12 +529,17 @@ public class Options {
                 case "send_codec_meta":
                     options.sendCodecMeta = Boolean.parseBoolean(value);
                     break;
-                case "enable-webrtc":
+                case "enable_webrtc":
                     options.enableWebRTC = Boolean.parseBoolean(value);
                     break;
-                case "webrtc-signal-url":
+                case "webrtc_signal_url":
                     if (!value.isEmpty()) {
                         options.webrtcSignalUrl = value;
+                    }
+                    break;
+                case "websocket_url":
+                    if (!value.isEmpty()) {
+                        options.websocketUrl = value;
                     }
                     break;
                 case "user_id":
