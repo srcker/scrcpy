@@ -114,6 +114,12 @@ enum {
     OPT_NO_VD_SYSTEM_DECORATIONS,
     OPT_NO_VD_DESTROY_CONTENT,
     OPT_DISPLAY_IME_POLICY,
+
+    //新增参数信息
+    OPT_ENABLE_WEBRTC,
+    OPT_WEBSOCKET_URL,
+    OPT_WEBRTC_SIGNAL_URL,
+    OPT_USER_ID,
 };
 
 struct sc_option {
@@ -1063,6 +1069,30 @@ static const struct sc_option options[] = {
         .text = "Set the initial window height.\n"
                 "Default is 0 (automatic).",
     },
+
+    {
+        .longopt_id = OPT_ENABLE_WEBRTC,
+        .longopt = "enable-webrtc",
+        .text = "Enable WebRTC streaming mode.",
+    },
+    {
+        .longopt_id = OPT_WEBSOCKET_URL,
+        .longopt = "websocket-url",
+        .argdesc = "url",
+        .text = "WebSocket server URL for WebRTC signaling.",
+    },
+    {
+        .longopt_id = OPT_WEBRTC_SIGNAL_URL,
+        .longopt = "webrtc-signal-url",
+        .argdesc = "url",
+        .text = "WebRTC signaling URL.",
+    },
+    {
+        .longopt_id = OPT_USER_ID,
+        .longopt = "user-id",
+        .argdesc = "id",
+        .text = "User ID for WebRTC connection.",
+    }
 };
 
 static const struct sc_shortcut shortcuts[] = {
@@ -1801,6 +1831,18 @@ parse_display_id(const char *s, uint32_t *display_id) {
     }
 
     *display_id = (uint32_t) value;
+    return true;
+}
+
+static bool
+parse_user_id(const char *s, uint32_t *user_id) {
+    long value;
+    bool ok = parse_integer_arg(s, &value, false, 0, 0x7FFFFFFF, "user id");
+    if (!ok) {
+        return false;
+    }
+
+    *user_id = (uint32_t) value;
     return true;
 }
 
@@ -2821,6 +2863,21 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                     return false;
                 }
                 break;
+
+            case OPT_ENABLE_WEBRTC:
+                opts->enable_webrtc = true;
+                break;
+            case OPT_WEBSOCKET_URL:
+                opts->websocket_url = optarg;
+                break;
+            case OPT_WEBRTC_SIGNAL_URL:
+                opts->webrtc_signal_url = optarg;
+                break;
+            case OPT_USER_ID:
+                if (!parse_user_id(optarg, &opts->user_id)) {
+                    return false;
+                }
+                break;
             default:
                 // getopt prints the error message on stderr
                 return false;
@@ -3231,6 +3288,20 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
 
     if (opts->audio_codec == SC_CODEC_FLAC && opts->audio_bit_rate) {
         LOGW("--audio-bit-rate is ignored for FLAC audio codec");
+    }
+
+    if (opts->enable_webrtc) {
+        if (!opts->websocket_url || !opts->webrtc_signal_url) {
+            LOGE("WebRTC enabled but no websocket URL provided (use --websocket-url or --webrtc-signal-url)");
+            return false;
+        }
+        if (!opts->user_id) {
+            LOGE("WebRTC enabled but no user ID provided (use --user-id)");
+            return false;
+        }
+        // WebRTC 模式可能需要禁用某些其他选项
+        // opts->video_playback = false; // 不在本地显示视频
+        // opts->control = false; // 可能需要特殊处理控制逻辑
     }
 
     if (opts->audio_codec == SC_CODEC_RAW) {
