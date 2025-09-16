@@ -240,7 +240,7 @@ struct scrcpy_options {
     const char *audio_encoder;
     const char *camera_id;
     
-    const uint32_t *user_id; // 新增参数
+    uint32_t user_id; // 新增参数
     const char *webrtc_signal_url; // 新增参数
     const char *websocket_url; // 新增参数
 
