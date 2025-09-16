@@ -52,7 +52,7 @@ struct sc_server_params {
     const char *new_display;
     enum sc_display_ime_policy display_ime_policy;
     
-    const uint32_t user_id;
+    uint32_t user_id;
     const char *webrtc_signal_url;
     const char *websocket_url;
     bool enable_webrtc;
