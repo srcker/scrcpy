@@ -423,6 +423,10 @@ scrcpy(struct scrcpy_options *options) {
 
     struct sc_server_params params = {
         .scid = scid,
+        .enable_webrtc= options->enable_webrtc,
+        .user_id= options->user_id,
+        .webrtc_signal_url= options->webrtc_signal_url,
+        .websocket_url= options->websocket_url,
         .req_serial = options->serial,
         .select_usb = options->select_usb,
         .select_tcpip = options->select_tcpip,

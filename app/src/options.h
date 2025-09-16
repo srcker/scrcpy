@@ -239,10 +239,10 @@ struct scrcpy_options {
     const char *video_encoder;
     const char *audio_encoder;
     const char *camera_id;
-    // 新增参数
-    const uint32_t *user_id;
-    const char *webrtc-signal-url;
-    const char *websocket-url;
+    
+    const uint32_t *user_id; // 新增参数
+    const char *webrtc_signal_url; // 新增参数
+    const char *websocket_url; // 新增参数
 
     const char *camera_size;
     const char *camera_ar;
@@ -289,9 +289,7 @@ struct scrcpy_options {
 #ifdef HAVE_USB
     bool otg;
 #endif
-    // 新增参数
-    bool enable-webrtc
-
+    bool enable_webrtc; // 新增参数
     bool show_touches;
     bool fullscreen;
     bool always_on_top;
