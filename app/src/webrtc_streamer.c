@@ -7,8 +7,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <libavutil/time.h>
 #include <libavutil/opt.h>
+#include <libavutil/base64.h>
 
 #include "util/log.h"
 #include "util/net.h"
@@ -87,25 +91,188 @@ send_websocket_message(struct sc_webrtc_streamer *streamer,
     return true;
 }
 
+// 解析WebSocket URL
+static bool
+parse_websocket_url(const char *url, char **host, int *port, char **path) {
+    if (!url || strncmp(url, "wss://", 6) != 0) {
+        LOGE("Invalid WebSocket URL: %s", url ? url : "NULL");
+        return false;
+    }
+
+    // 跳过 "wss://" 前缀
+    const char *start = url + 6;
+    
+    // 查找路径分隔符
+    const char *path_start = strchr(start, '/');
+    if (!path_start) {
+        path_start = start + strlen(start);
+        *path = strdup("/");
+    } else {
+        *path = strdup(path_start);
+    }
+    
+    if (!*path) {
+        return false;
+    }
+
+    // 查找端口分隔符
+    const char *port_start = strchr(start, ':');
+    if (port_start && port_start < path_start) {
+        // 有端口号
+        int host_len = port_start - start;
+        *host = malloc(host_len + 1);
+        if (!*host) {
+            free(*path);
+            return false;
+        }
+        memcpy(*host, start, host_len);
+        (*host)[host_len] = '\0';
+        
+        *port = atoi(port_start + 1);
+        if (*port <= 0 || *port > 65535) {
+            *port = 443; // 默认HTTPS端口
+        }
+    } else {
+        // 没有端口号，使用默认端口
+        int host_len = path_start - start;
+        *host = malloc(host_len + 1);
+        if (!*host) {
+            free(*path);
+            return false;
+        }
+        memcpy(*host, start, host_len);
+        (*host)[host_len] = '\0';
+        
+        *port = 443; // wss默认端口
+    }
+
+    return true;
+}
+
+// 生成WebSocket密钥
+static void
+generate_websocket_key(char *key, size_t key_size) {
+    const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    
+    // 生成24字符的随机Base64字符串
+    for (int i = 0; i < 24 && i < (int)key_size - 1; i++) {
+        key[i] = charset[rand() % (sizeof(charset) - 1)];
+    }
+    key[24] = '\0';
+}
+
 static bool
 connect_websocket(struct sc_webrtc_streamer *streamer) {
-    // 简化的WebSocket连接实现
-    // 实际项目中需要完整的WebSocket握手协议
-    
     LOGI("Connecting to WebSocket: %s", streamer->websocket_url);
     
-    // 这里应该解析URL并建立TCP连接
-    // 为了简化，我们假设连接成功
-    streamer->websocket_fd = -1; // 实际需要创建socket连接
-    streamer->connected = false;
+    char *host = NULL;
+    char *path = NULL;
+    int port = 0;
     
-    // TODO: 实现完整的WebSocket握手
-    // 1. 创建TCP连接
-    // 2. 发送HTTP升级请求
-    // 3. 验证服务器响应
+    // 解析URL
+    if (!parse_websocket_url(streamer->websocket_url, &host, &port, &path)) {
+        LOGE("Failed to parse WebSocket URL");
+        return false;
+    }
     
-    LOGW("WebSocket connection not fully implemented yet");
-    return false;
+    LOGI("Parsed WebSocket URL - Host: %s, Port: %d, Path: %s", host, port, path);
+    
+    // 创建socket
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        LOGE("Failed to create socket: %s", strerror(errno));
+        free(host);
+        free(path);
+        return false;
+    }
+    
+    // 解析主机名
+    struct hostent *server = gethostbyname(host);
+    if (!server) {
+        LOGE("Failed to resolve hostname: %s", host);
+        close(sockfd);
+        free(host);
+        free(path);
+        return false;
+    }
+    
+    // 连接到服务器
+    struct sockaddr_in serv_addr;
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(port);
+    memcpy(&serv_addr.sin_addr.s_addr, server->h_addr_list[0], server->h_length);
+    
+    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        LOGE("Failed to connect to server: %s", strerror(errno));
+        close(sockfd);
+        free(host);
+        free(path);
+        return false;
+    }
+    
+    // 注意：这里简化了SSL/TLS处理，实际项目中需要完整的SSL实现
+    LOGW("SSL/TLS not implemented - using plain TCP connection (production should use SSL)");
+    
+    // 生成WebSocket密钥
+    char websocket_key[32];
+    generate_websocket_key(websocket_key, sizeof(websocket_key));
+    
+    // 构建HTTP升级请求
+    char request[1024];
+    int request_len = snprintf(request, sizeof(request),
+        "GET %s HTTP/1.1\r\n"
+        "Host: %s:%d\r\n"
+        "Upgrade: websocket\r\n"
+        "Connection: Upgrade\r\n"
+        "Sec-WebSocket-Key: %s\r\n"
+        "Sec-WebSocket-Version: 13\r\n"
+        "Origin: http://%s\r\n"
+        "\r\n",
+        path, host, port, websocket_key, host);
+    
+    // 发送升级请求
+    ssize_t sent = send(sockfd, request, request_len, 0);
+    if (sent != request_len) {
+        LOGE("Failed to send WebSocket upgrade request: %s", strerror(errno));
+        close(sockfd);
+        free(host);
+        free(path);
+        return false;
+    }
+    
+    // 接收服务器响应
+    char response[1024];
+    ssize_t received = recv(sockfd, response, sizeof(response) - 1, 0);
+    if (received <= 0) {
+        LOGE("Failed to receive WebSocket upgrade response: %s", strerror(errno));
+        close(sockfd);
+        free(host);
+        free(path);
+        return false;
+    }
+    
+    response[received] = '\0';
+    LOGI("WebSocket upgrade response: %s", response);
+    
+    // 简单验证响应（实际项目中需要更严格的验证）
+    if (strstr(response, "101 Switching Protocols") == NULL) {
+        LOGE("WebSocket upgrade failed: invalid response");
+        close(sockfd);
+        free(host);
+        free(path);
+        return false;
+    }
+    
+    // 连接成功
+    streamer->websocket_fd = sockfd;
+    streamer->connected = true;
+    
+    free(host);
+    free(path);
+    
+    LOGI("WebSocket connection established successfully");
+    return true;
 }
 
 static bool
@@ -173,8 +340,29 @@ run_webrtc_streamer(void *data) {
     LOGI("WebRTC streamer thread started");
 
     // 尝试连接WebSocket
-    if (!connect_websocket(streamer)) {
-        LOGE("Failed to connect to WebSocket server");
+    int retry_count = 0;
+    const int max_retries = 3;
+    
+    while (!streamer->stopped && retry_count < max_retries) {
+        if (connect_websocket(streamer)) {
+            LOGI("WebSocket connected successfully");
+            break;
+        }
+        
+        retry_count++;
+        if (retry_count < max_retries) {
+            LOGW("WebSocket connection failed, retrying in 2 seconds... (%d/%d)", 
+                 retry_count, max_retries);
+            
+            // 等待2秒后重试
+            for (int i = 0; i < 20 && !streamer->stopped; i++) {
+                usleep(100000); // 100ms
+            }
+        }
+    }
+    
+    if (!streamer->connected) {
+        LOGE("Failed to connect to WebSocket server after %d attempts", max_retries);
         return -1;
     }
 
@@ -199,7 +387,8 @@ run_webrtc_streamer(void *data) {
         // 编码并发送帧
         bool ok = encode_and_send_frame(streamer, frame);
         if (!ok) {
-            LOGE("Failed to encode and send frame");
+            LOGE("Failed to encode and send frame, will try to reconnect");
+            // 在实际项目中，这里可以尝试重新连接
             break;
         }
     }
