@@ -37,7 +37,6 @@ public class SignalingClient {
 
         Request request = new Request.Builder().url(url).build();
         ws = client.newWebSocket(request, new WebSocketListener() {
-
             @Override
             public void onMessage(@NotNull WebSocket webSocket, @NotNull  String text) {
                 try {

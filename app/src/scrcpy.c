@@ -44,6 +44,7 @@
 #ifdef HAVE_V4L2
 # include "v4l2_sink.h"
 #endif
+#include "webrtc_streamer.h"
 
 struct scrcpy {
     struct sc_server server;
@@ -55,6 +56,7 @@ struct scrcpy {
     struct sc_decoder audio_decoder;
     struct sc_recorder recorder;
     struct sc_delay_buffer video_buffer;
+    struct sc_webrtc_streamer webrtc_streamer;
 #ifdef HAVE_V4L2
     struct sc_v4l2_sink v4l2_sink;
     struct sc_delay_buffer v4l2_buffer;
@@ -400,6 +402,8 @@ scrcpy(struct scrcpy_options *options) {
     bool file_pusher_initialized = false;
     bool recorder_initialized = false;
     bool recorder_started = false;
+    bool webrtc_streamer_initialized = false;
+    bool webrtc_streamer_started = false;
 #ifdef HAVE_V4L2
     bool v4l2_sink_initialized = false;
 #endif
@@ -874,6 +878,33 @@ aoa_complete:
     }
 #endif
 
+    // Initialize WebRTC streamer if enabled
+    if (options->enable_webrtc && options->video) {
+        LOGI("Initializing WebRTC streamer");
+        
+        if (!sc_webrtc_streamer_init(&s->webrtc_streamer, 
+                                     options->websocket_url,
+                                     options->webrtc_signal_url,
+                                     options->user_id)) {
+            LOGE("Failed to initialize WebRTC streamer");
+            goto end;
+        }
+        webrtc_streamer_initialized = true;
+
+        // Add WebRTC streamer as a sink to the video decoder
+        sc_frame_source_add_sink(&s->video_decoder.frame_source, 
+                                 &s->webrtc_streamer.frame_sink);
+
+        // Start the WebRTC streamer thread
+        if (!sc_webrtc_streamer_start(&s->webrtc_streamer)) {
+            LOGE("Failed to start WebRTC streamer");
+            goto end;
+        }
+        webrtc_streamer_started = true;
+
+        LOGI("WebRTC streamer started successfully");
+    }
+
     // Now that the header values have been consumed, the socket(s) will
     // receive the stream(s). Start the demuxer(s).
 
@@ -993,6 +1024,9 @@ end:
     if (recorder_initialized) {
         sc_recorder_stop(&s->recorder);
     }
+    if (webrtc_streamer_started) {
+        sc_webrtc_streamer_stop(&s->webrtc_streamer);
+    }
     if (screen_initialized) {
         sc_screen_interrupt(&s->screen);
     }
@@ -1024,6 +1058,13 @@ end:
         sc_v4l2_sink_destroy(&s->v4l2_sink);
     }
 #endif
+
+    if (webrtc_streamer_started) {
+        sc_webrtc_streamer_join(&s->webrtc_streamer);
+    }
+    if (webrtc_streamer_initialized) {
+        sc_webrtc_streamer_destroy(&s->webrtc_streamer);
+    }
 
 #ifdef HAVE_USB
     if (aoa_hid_initialized) {

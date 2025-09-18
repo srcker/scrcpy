@@ -1,32 +1,41 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace 'com.genymobile.scrcpy'
-    compileSdk 35
+    // 属性赋值使用 = 语法
+    namespace = 'com.genymobile.scrcpy'
+    compileSdk = 35
+
     defaultConfig {
-        applicationId "com.genymobile.scrcpy"
-        minSdkVersion 21
-        targetSdkVersion 35
-        versionCode 30302
-        versionName "3.3.2"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        applicationId = "com.genymobile.scrcpy"
+        minSdk = 21
+        targetSdk = 35
+        versionCode = 30302
+        versionName = "3.3.2"
+        testInstrumentationRunner = "android.support.test.runner.AndroidJUnitRunner"
+
     }
+
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled = false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
     buildFeatures {
-        buildConfig true
-        aidl true
+        buildConfig = true
+        aidl = true
     }
 }
 
 dependencies {
     implementation 'com.squareup.okhttp3:okhttp:5.1.0'
-    implementation 'com.infobip:google-webrtc:1.0.45036'
+//    implementation 'dev.onvoid.webrtc:webrtc-java:0.14.0'
     testImplementation 'junit:junit:4.13.2'
+
+    // 这个去除 因为他必须依赖 context
+     implementation 'com.infobip:google-webrtc:1.0.45036'
 }
 
+// 保留原来的 checkstyle 引用
 apply from: "$project.rootDir/config/android-checkstyle.gradle"

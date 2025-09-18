@@ -1,5 +1,6 @@
 package com.genymobile.scrcpy.webrtc;
 
+import android.content.Context;
 import android.view.Surface;
 
 import com.genymobile.scrcpy.Options;
@@ -33,9 +34,12 @@ public class WebRTCModule {
     private SignalingClient signaling;
     private EglBase eglBase;
 
+    private final Context appContext;
+
     private Long userId;
 
-    public WebRTCModule(Options options) {
+    public WebRTCModule(Context context, Options options) {
+        this.appContext = context.getApplicationContext(); // 确保是 ApplicationContext
         this.signalUrl = options.getWebrtcSignalUrl();
         this.userId = options.getUserId();
     }
@@ -44,7 +48,8 @@ public class WebRTCModule {
     // 初始化 WebRTC
     public void init() {
         PeerConnectionFactory.initialize(
-                PeerConnectionFactory.InitializationOptions.builder(null)
+                PeerConnectionFactory.InitializationOptions.builder(appContext)
+                        .setEnableInternalTracer(true) // 可选：开启内部日志
                         .createInitializationOptions());
 
         eglBase = EglBase.create();

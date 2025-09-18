@@ -1,5 +1,7 @@
 package com.genymobile.scrcpy.video;
 
+import static org.webrtc.ApplicationContextProvider.getApplicationContext;
+
 import com.genymobile.scrcpy.AndroidVersions;
 import com.genymobile.scrcpy.AsyncProcessor;
 import com.genymobile.scrcpy.Options;
@@ -54,20 +56,11 @@ public class SurfaceEncoder implements AsyncProcessor {
 
     private final CaptureReset reset = new CaptureReset();
 
-    private final boolean enableWebRTC;
-    private WebRTCModule webrtcModule;
+//    private final boolean enableWebRTC;
+//    private WebRTCModule webrtcModule;
+//
+//    private final String webrtcSignalUrl;
 
-    private final String webrtcSignalUrl;
-
-//    public SurfaceEncoder(SurfaceCapture capture, Streamer streamer, Options options) {
-//        this.capture = capture;
-//        this.streamer = streamer;
-//        this.videoBitRate = options.getVideoBitRate();
-//        this.maxFps = options.getMaxFps();
-//        this.codecOptions = options.getVideoCodecOptions();
-//        this.encoderName = options.getVideoEncoder();
-//        this.downsizeOnError = options.getDownsizeOnError();
-//    }
 
     public SurfaceEncoder(SurfaceCapture capture, Streamer streamer, Options options) {
         this.capture = capture;
@@ -77,15 +70,9 @@ public class SurfaceEncoder implements AsyncProcessor {
         this.codecOptions = options.getVideoCodecOptions();
         this.encoderName = options.getVideoEncoder();
         this.downsizeOnError = options.getDownsizeOnError();
-        this.enableWebRTC = options.getEnableWebRTC();
-        this.webrtcSignalUrl = options.getWebrtcSignalUrl();
+//        this.enableWebRTC = options.getEnableWebRTC();
+//        this.webrtcSignalUrl = options.getWebrtcSignalUrl();
 
-        if (enableWebRTC) {
-            this.webrtcModule = new WebRTCModule(options);
-            this.webrtcModule.init();
-        }
-
-        Ln.w("启动参数: options->" + options.toString());
         Log.w("启动参数: options->" , options.toString());
     }
 
@@ -118,14 +105,7 @@ public class SurfaceEncoder implements AsyncProcessor {
                 try {
                     mediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
 
-                    if (enableWebRTC && webrtcModule != null) {
-                        Ln.i("启动 WebRTC 推流 信令地址:" +  webrtcSignalUrl);
-                        Log.w("启动 WebRTC 推流 信令地址:" , webrtcSignalUrl);
-                        // WebRTC 零拷贝
-                        surface = webrtcModule.getInputSurface();
-                    } else {
-                        surface = mediaCodec.createInputSurface();
-                    }
+                    surface = mediaCodec.createInputSurface();
 
                     capture.start(surface);
                     captureStarted = true;
@@ -349,11 +329,6 @@ public class SurfaceEncoder implements AsyncProcessor {
         if (thread != null) {
             stopped.set(true);
             reset.reset();
-        }
-
-        if (webrtcModule != null) {
-            webrtcModule.stop();
-            webrtcModule = null;
         }
     }
 

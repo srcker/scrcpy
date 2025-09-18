@@ -6,9 +6,10 @@ buildscript {
         google()
         mavenCentral()
     }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:8.13.0'
 
+    dependencies {
+        // 使用赋值语法，兼容 Gradle 10+
+        classpath 'com.android.tools.build:gradle:8.13.0'
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }
@@ -19,7 +20,17 @@ allprojects {
         google()
         mavenCentral()
     }
-    tasks.withType(JavaCompile) {
-        options.compilerArgs << "-Xlint:deprecation"
+
+    // 配置 Java 编译器选项，兼容过时警告
+    tasks.withType(JavaCompile).tap {
+        configureEach {
+            // 设置 Java 编译版本，推荐升级到 17 或 11
+//            sourceCompatibility = JavaVersion.VERSION_17
+//            targetCompatibility = JavaVersion.VERSION_17
+
+            // 忽略过时选项警告
+            options.compilerArgs << "-Xlint:deprecation"
+            options.compilerArgs << "-Xlint:-options"
+        }
     }
 }

@@ -692,4 +692,40 @@ public class Options {
                 throw new IllegalArgumentException("Invalid display IME policy: " + value);
         }
     }
+
+    @Override
+    public String toString() {
+        return "Options{" +
+                "logLevel=" + logLevel +
+                ", scid=" + scid +
+                ", video=" + video +
+                ", audio=" + audio +
+                ", maxSize=" + maxSize +
+                ", videoCodec=" + videoCodec +
+                ", audioCodec=" + audioCodec +
+                ", videoSource=" + videoSource +
+                ", audioSource=" + audioSource +
+                ", audioDup=" + audioDup +
+                ", videoBitRate=" + videoBitRate +
+                ", audioBitRate=" + audioBitRate +
+                ", maxFps=" + maxFps +
+                ", angle=" + angle +
+                ", tunnelForward=" + tunnelForward +
+                ", crop=" + crop +
+                ", control=" + control +
+                ", displayId=" + displayId +
+                ", cameraId='" + cameraId + '\'' +
+                ", enableWebRTC=" + enableWebRTC +
+                ", webrtcSignalUrl='" + webrtcSignalUrl + '\'' +
+                ", websocketUrl='" + websocketUrl + '\'' +
+                ", userId=" + userId +
+                ", cameraSize=" + cameraSize +
+                ", cameraFacing=" + cameraFacing +
+                ", cameraAspectRatio=" + cameraAspectRatio +
+                ", cameraFps=" + cameraFps +
+                ", cameraHighSpeed=" + cameraHighSpeed +
+                ", showTouches=" + showTouches +
+                ", stayAwake=" + stayAwake +
+                '}';
+    }
 }

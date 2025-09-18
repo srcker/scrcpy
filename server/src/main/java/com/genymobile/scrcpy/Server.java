@@ -242,6 +242,7 @@ public final class Server {
         Ln.disableSystemStreams();
         Ln.initLogLevel(options.getLogLevel());
 
+        Ln.i("Options: " + options + " ");
         Ln.i("Device: [" + Build.MANUFACTURER + "] " + Build.BRAND + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ")");
 
         if (options.getList()) {
